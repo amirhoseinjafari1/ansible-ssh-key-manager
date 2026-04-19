@@ -1,0 +1,28 @@
+---
+- name: Manage SSH public keys
+  hosts: servers
+  gather_facts: no
+
+  vars_files:
+    - vars/ssh_keys.yml
+
+  vars:
+    target_user: "{{ ansible_user | default('root') }}"
+    ssh_dir: "/home/{{ target_user }}/.ssh"
+
+  tasks:
+    - name: Ensure .ssh directory exists
+      file:
+        path: "{{ ssh_dir }}"
+        state: directory
+        mode: '0700'
+        owner: "{{ target_user }}"
+
+    - name: Manage authorized_keys
+      authorized_key:
+        user: "{{ target_user }}"
+        key: "{{ item.key }}"
+        state: "{{ item.state | default('present') }}"
+      loop: "{{ ssh_keys }}"
+      loop_control:
+        label: "{{ item.name }}"
